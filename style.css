@@ -1,0 +1,11 @@
+body{font-family:Inter,system-ui,sans-serif;background:linear-gradient(180deg,#f7fbff,#fff);margin:0}
+.top{padding:18px;background:linear-gradient(90deg,#f0f8ff,#fff8ea);text-align:center;border-bottom:1px solid #eee}
+.subtitle{color:#666;margin-top:6px}
+.container{padding:16px;max-width:900px;margin:0 auto}
+.card{background:white;padding:12px;border-radius:10px;box-shadow:0 4px 18px rgba(10,10,10,0.05);margin-bottom:12px}
+.btn{background:#0b6cf8;color:white;border:none;padding:10px 14px;border-radius:8px;cursor:pointer}
+.badge{padding:8px;background:#fff3cd;border-radius:8px;margin-top:8px}
+.hidden{display:none}
+.muted{color:#666;font-size:13px}
+.feedCard{padding:10px;border-top:1px dashed #eee}
+.footer{text-align:center;padding:12px;color:#777;font-size:13px}
