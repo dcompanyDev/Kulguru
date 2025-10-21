@@ -6,12 +6,19 @@
   <title>Kulguru — Narmada Parikrama</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <link rel="stylesheet" href="styles.css">
+  <!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 </head>
 <body>
   <header class="top">
     <h1>🕉️ Kulguru</h1>
     <p class="subtitle">Narmada Parikrama — Live Darshan</p>
   </header>
+  
+<div id="map" style="height: 500px; width: 100%;"></div>
 
   <main class="container">
     <section class="card">
@@ -143,5 +150,21 @@ const firebaseConfig = {
   measurementId: "G-VCKFNFDXVQ"
 };
   </script>
+
+  <script>
+  // Initialize map and set view (default near Omkareshwar)
+  var map = L.map('map').setView([22.24, 76.15], 10);
+
+  // Add the OpenStreetMap layer
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18,
+    attribution: '© OpenStreetMap contributors'
+  }).addTo(map);
+
+  // Add a marker (Surajkund Maharaj Ji parikrama start point)
+  var marker = L.marker([22.24, 76.15]).addTo(map);
+  marker.bindPopup("<b>🕉️ Narmada Parikrama</b><br>Starting Point: Omkareshwar").openPopup();
+</script>
+
 </body>
 </html>
