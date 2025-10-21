@@ -1,0 +1,67 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Kulguru — Admin Share</title>
+  <style>
+    body{font-family:sans-serif;padding:20px}
+    button{padding:12px 18px;font-size:16px}
+    .muted{color:#666}
+  </style>
+</head>
+<body>
+  <h2>Admin: Share Live Location</h2>
+  <p class="muted">Open this on the phone that will walk. Tap start and keep screen on.</p>
+
+  <label>Name: <input id="name" value="Maharajshree"></label><br><br>
+  <button id="start">Start Sharing</button>
+  <button id="stop" disabled>Stop</button>
+  <div id="info"></div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+  <script>
+  const firebaseConfig = /* YOUR_FIREBASE_CONFIG */;
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  let watchId = null;
+  let walkerId = null;
+  let path = [];
+
+  document.getElementById('start').onclick = async () => {
+    const name = document.getElementById('name').value || 'Maharajshree';
+    // unique id for this session
+    walkerId = 'walker_' + Date.now();
+    document.getElementById('start').disabled = true;
+    document.getElementById('stop').disabled = false;
+    document.getElementById('info').innerText = 'Requesting GPS... Keep this page open.';
+
+    if(!navigator.geolocation) { alert('GPS not supported'); return; }
+
+    watchId = navigator.geolocation.watchPosition(pos => {
+      const lat = pos.coords.latitude, lng = pos.coords.longitude;
+      const ts = Date.now();
+      path.push({lat,lng,ts});
+      db.ref('walkers/' + walkerId).set({name, lat, lng, ts, path});
+      document.getElementById('info').innerText = `Shared at ${lat.toFixed(5)}, ${lng.toFixed(5)} — ${new Date(ts).toLocaleTimeString()}`;
+    }, err => {
+      console.error(err);
+      alert('GPS error: ' + err.message);
+    }, {enableHighAccuracy:true, maximumAge:1000, timeout:10000});
+  };
+
+  document.getElementById('stop').onclick = () => {
+    if(watchId !== null) navigator.geolocation.clearWatch(watchId);
+    watchId = null;
+    if(walkerId) db.ref('walkers/' + walkerId).remove();
+    document.getElementById('info').innerText = 'Stopped sharing.';
+    document.getElementById('start').disabled = false;
+    document.getElementById('stop').disabled = true;
+  };
+  </script>
+</body>
+</html>
