@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Kulguru — Narmada Parikrama</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="top">
+    <h1>🕉️ Kulguru</h1>
+    <p class="subtitle">Narmada Parikrama — Live Darshan</p>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <button id="takeSankalp" class="btn">🙏 Take Virtual Sankalp</button>
+      <div id="sankalpBadge" class="badge hidden"></div>
+    </section>
+
+    <section class="card">
+      <h2>📍 Live Parikrama Map</h2>
+      <div id="map" style="height:360px;"></div>
+      <div id="status" class="muted">Loading route…</div>
+      <button id="shareBtn" class="btn">Share Darshan</button>
+    </section>
+
+    <section class="card">
+      <h2>🪔 Darshan Feed</h2>
+      <div id="feed"></div>
+    </section>
+  </main>
+
+  <footer class="footer">Made with devotion • Jai Narmade 🌊</footer>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+  <!-- Leaflet -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script>
+  // ------------------ PASTE YOUR FIREBASE CONFIG OBJECT HERE ------------------
+  const firebaseConfig = /* YOUR_FIREBASE_CONFIG */;
+  // ---------------------------------------------------------------------------
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  // UI refs
+  const mapEl = document.getElementById('map');
+  const status = document.getElementById('status');
+  const feedEl = document.getElementById('feed');
+  const takeSankalp = document.getElementById('takeSankalp');
+  const sankalpBadge = document.getElementById('sankalpBadge');
+  const shareBtn = document.getElementById('shareBtn');
+
+  // Simple local storage profile
+  function showBadge() {
+    const profile = JSON.parse(localStorage.getItem('kulguru_profile')||'null');
+    if(profile) {
+      sankalpBadge.classList.remove('hidden');
+      sankalpBadge.innerText = `🛕 ${profile.name} • Sankalp ${profile.date}`;
+    } else sankalpBadge.classList.add('hidden');
+  }
+  showBadge();
+
+  takeSankalp.onclick = () => {
+    const name = prompt('Enter your name for the Sankalp (e.g. Suresh):');
+    if(!name) return;
+    const profile = {name, city: '', date: new Date().toLocaleString(), seva:'online'};
+    localStorage.setItem('kulguru_profile', JSON.stringify(profile));
+    alert('Sankalp taken. Jai Narmade 🌊');
+    showBadge();
+    // write to DB for listing
+    db.ref('parikramavasis').push(profile);
+  };
+
+  // Map init
+  const map = L.map('map').setView([22.0, 76.0], 7); // center India-ish
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18}).addTo(map);
+
+  // Markers and route polyline
+  const markers = {};
+  const routeLines = {};
+
+  // Listen for live walkers data
+  const walkersRef = db.ref('walkers'); // structure: walkers/{id} = {name, lat, lng, ts}
+  walkersRef.on('value', snap => {
+    const data = snap.val()||{};
+    status.innerText = 'Live: ' + Object.keys(data).length + ' shared';
+    // clear existing markers
+    Object.values(markers).forEach(m=>map.removeLayer(m));
+    Object.values(routeLines).forEach(l=>map.removeLayer(l));
+    Object.keys(markers).forEach(k=>delete markers[k]);
+    Object.keys(routeLines).forEach(k=>delete routeLines[k]);
+
+    // for each walker, show marker and path (if path exists)
+    Object.entries(data).forEach(([id, w]) => {
+      if(!w) return;
+      const lat = w.lat, lng = w.lng;
+      const name = w.name || 'Parikramavasi';
+      markers[id] = L.marker([lat,lng]).addTo(map).bindPopup(`${name}<br>${new Date(w.ts).toLocaleString()}`);
+      if(w.path && Array.isArray(w.path)) {
+        routeLines[id] = L.polyline(w.path.map(p=>[p.lat,p.lng]), {weight:4}).addTo(map);
+      }
+    });
+  });
+
+  // Darshan feed (simple)
+  const feedRef = db.ref('feed').limitToLast(20);
+  feedRef.on('value', snap => {
+    const items = snap.val()||{};
+    feedEl.innerHTML = '';
+    Object.values(items).reverse().forEach(item => {
+      const d = document.createElement('div');
+      d.className = 'feedCard';
+      d.innerHTML = `<b>${item.title||'Update'}</b><div class="muted">${item.text||''}</div><small class="muted">${new Date(item.ts).toLocaleString()}</small>`;
+      feedEl.appendChild(d);
+    });
+  });
+
+  // Share button
+  shareBtn.onclick = async () => {
+    const url = location.href;
+    if(navigator.share) {
+      await navigator.share({title:'Kulguru — Live Parikrama', text:'Join virtual Sankalp and darshan', url});
+    } else {
+      prompt('Share this link', url);
+    }
+  };
+
+  </script>
+</body>
+</html>
